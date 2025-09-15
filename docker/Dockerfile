@@ -92,7 +92,7 @@ RUN arch="$(uname -m)" && \
 FROM base AS download-runner
 
 # Build argument for runner version
-ARG RUNNER_VERSION=2.327.1
+ARG RUNNER_VERSION=2.328.0
 
 # Set working directory for downloads
 WORKDIR /downloads
