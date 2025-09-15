@@ -4,7 +4,7 @@ set -euo pipefail
 # Generates a docker-compose.yml for GitHub runners (bash replacement for the.
 # previous Python script).
 
-image_version="1.1.1"
+image_version="1.0.0"
 image_name="ghcr.io/xpirit-training/docker-runner"
 
 usage() {

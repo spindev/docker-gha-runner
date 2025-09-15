@@ -1,3 +1,10 @@
+# 1.0.0 (2025-09-15)
+
+
+### Features
+
+* initial commit ([6df1f03](https://github.com/spindev/docker-gha-runner/commit/6df1f0348c20d8071191e569864a58f6285ba803))
+
 ## [1.1.1](https://github.com/xpirit-training/docker-runner/compare/1.1.0...1.1.1) (2025-09-15)
 
 
