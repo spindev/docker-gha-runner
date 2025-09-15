@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/spindev/docker-gha-runner/compare/1.0.0...1.0.1) (2025-09-15)
+
+
+### Bug Fixes
+
+* update ghcr.io path ([aba13d0](https://github.com/spindev/docker-gha-runner/commit/aba13d0d4905e1a356617670b46395f6d3cba1cb))
+
 # 1.0.0 (2025-09-15)
 
 
