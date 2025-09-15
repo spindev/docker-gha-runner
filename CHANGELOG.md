@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/spindev/docker-gha-runner/compare/1.0.1...1.1.0) (2025-09-15)
+
+
+### Features
+
+* update runner version to 2.328.0 ([1af0f42](https://github.com/spindev/docker-gha-runner/commit/1af0f42da8c5e20553e8bcc95089feb223d34369))
+
 ## [1.0.1](https://github.com/spindev/docker-gha-runner/compare/1.0.0...1.0.1) (2025-09-15)
 
 
