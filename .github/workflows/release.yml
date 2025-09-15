@@ -1,0 +1,141 @@
+name: Release Application
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      statuses: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Lint using super-linter
+        uses: super-linter/super-linter@ffde3b2b33b745cb612d787f669ef9442b1339a6 # v8.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILTER_REGEX_EXCLUDE: CHANGELOG.md
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      - uses: actions/create-github-app-token@a8d616148505b5069dccd32f177bb87d7f39123b # v2.1.1
+        id: token
+        with:
+          app-id: ${{ vars.APP_ID_SEMREL }}
+          private-key: ${{ secrets.APP_KEY_SEMREL }}
+      - name: Semantic release
+        id: semrel
+        uses: cycjimmy/semantic-release-action@9cc899c47e6841430bbaedb43de1560a568dfd16 # v5.0.0
+        with:
+          extra_plugins: |
+            semantic-release-replace-plugin
+          dry_run: ${{ github.event_name != 'push' }}
+          ci: true
+        env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+      - name: Generate release summary
+        if: always()
+        env:
+          DRY_RUN_MODE: ${{ github.event_name != 'push' }}
+          EVENT_TYPE: ${{ github.event_name }}
+          BRANCH_REF: ${{ github.ref }}
+          NEW_RELEASE_PUBLISHED: ${{ steps.semrel.outputs.new_release_published }}
+          NEW_RELEASE_VERSION: ${{ steps.semrel.outputs.new_release_version }}
+          NEW_RELEASE_MAJOR_VERSION: ${{ steps.semrel.outputs.new_release_major_version }}
+          NEW_RELEASE_MINOR_VERSION: ${{ steps.semrel.outputs.new_release_minor_version }}
+          NEW_RELEASE_PATCH_VERSION: ${{ steps.semrel.outputs.new_release_patch_version }}
+          NEW_RELEASE_GIT_TAG: ${{ steps.semrel.outputs.new_release_git_tag }}
+          NEW_RELEASE_GIT_HEAD: ${{ steps.semrel.outputs.new_release_git_head }}
+          NEW_RELEASE_CHANNEL: ${{ steps.semrel.outputs.new_release_channel }}
+          NEW_RELEASE_NOTES: ${{ steps.semrel.outputs.new_release_notes }}
+          LAST_RELEASE_VERSION: ${{ steps.semrel.outputs.last_release_version }}
+          LAST_RELEASE_GIT_TAG: ${{ steps.semrel.outputs.last_release_git_tag }}
+          LAST_RELEASE_GIT_HEAD: ${{ steps.semrel.outputs.last_release_git_head }}
+        run: |
+          {
+            echo "# 🚀 Semantic Release Summary"
+            echo ""
+            echo "## Configuration"
+            echo "| Property | Value |"
+            echo "|----------|-------|"
+            echo "| **Dry Run Mode** | \`${DRY_RUN_MODE}\` |"
+            echo "| **Event Type** | \`${EVENT_TYPE}\` |"
+            echo "| **Branch/Ref** | \`${BRANCH_REF}\` |"
+            echo ""
+            echo "## Release Information"
+            echo "| Property | Value |"
+            echo "|----------|-------|"
+            echo "| **New Release Published** | \`${NEW_RELEASE_PUBLISHED}\` |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          if [[ "${NEW_RELEASE_PUBLISHED}" == "true" ]]; then
+            {
+              echo "| **New Release Version** | \`${NEW_RELEASE_VERSION}\` |"
+              echo "| **Major Version** | \`${NEW_RELEASE_MAJOR_VERSION}\` |"
+              echo "| **Minor Version** | \`${NEW_RELEASE_MINOR_VERSION}\` |"
+              echo "| **Patch Version** | \`${NEW_RELEASE_PATCH_VERSION}\` |"
+              echo "| **Git Tag** | \`${NEW_RELEASE_GIT_TAG}\` |"
+              echo "| **Git HEAD** | \`${NEW_RELEASE_GIT_HEAD}\` |"
+            } >> "${GITHUB_STEP_SUMMARY}"
+            
+            if [[ -n "${NEW_RELEASE_CHANNEL}" ]]; then
+              echo "| **Release Channel** | \`${NEW_RELEASE_CHANNEL}\` |" >> "${GITHUB_STEP_SUMMARY}"
+            fi
+            
+            {
+              echo ""
+              echo "## 📝 Release Notes"
+              echo ""
+              echo "${NEW_RELEASE_NOTES}"
+            } >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "| **Status** | No new release was created |" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+          {
+            echo ""
+            echo "## Previous Release Information"
+            echo "| Property | Value |"
+            echo "|----------|-------|"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          if [[ -n "${LAST_RELEASE_VERSION}" ]]; then
+            {
+              echo "| **Last Release Version** | \`${LAST_RELEASE_VERSION}\` |"
+              echo "| **Last Release Git Tag** | \`${LAST_RELEASE_GIT_TAG}\` |"
+              echo "| **Last Release Git HEAD** | \`${LAST_RELEASE_GIT_HEAD}\` |"
+            } >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "| **Status** | No previous release found |" >> "${GITHUB_STEP_SUMMARY}"
+          fi

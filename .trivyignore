@@ -1,0 +1,2 @@
+# Skip root user check - required for Docker-in-Docker GitHub Actions runner
+AVD-DS-0002

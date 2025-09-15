@@ -1,0 +1,43 @@
+{
+  "branches": ["main"],
+  "tagFormat": "${version}",
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "semantic-release-replace-plugin",
+      {
+        "replacements": [
+          {
+            "files": ["scripts/bootstrap.sh"],
+            "from": "image_version=\"\\d\\.\\d\\.\\d\"",
+            "to": "image_version=\"${nextRelease.version}\"",
+            "results": [
+              {
+                "file": "scripts/bootstrap.sh",
+                "hasChanged": true,
+                "numMatches": 1,
+                "numReplacements": 1
+              }
+            ],
+            "countMatches": true
+          }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+        "assets": ["CHANGELOG.md", "scripts/bootstrap.sh"]
+      }
+    ],
+    "@semantic-release/github"
+  ]
+}

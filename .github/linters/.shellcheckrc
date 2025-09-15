@@ -1,0 +1,4 @@
+# Shellcheck configuration for docker-runner project
+
+# Ignore SC1091 for logger.sh sourcing - file exists at runtime but not during linting
+disable=SC1091

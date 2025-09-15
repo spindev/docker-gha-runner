@@ -1,0 +1,10 @@
+framework:
+  - dockerfile
+
+skip-check:
+  # Skip root user check - required for Docker-in-Docker GitHub Actions runner
+  - CKV_DOCKER_3
+
+# Custom rule exclusions
+check:
+  - DS002 # Also skip Trivy equivalent of the root user check

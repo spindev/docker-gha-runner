@@ -1,0 +1,145 @@
+name: Self-hosted runner tests
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  repo-info:
+    name: Display repository information
+    runs-on: [self-hosted]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Show repo files
+        run: |
+          echo "== Current directory =="
+          pwd
+          echo
+
+          echo "== List files =="
+          ls -la
+          echo
+
+          echo "== Git info =="
+          git status
+          git branch -vv
+          git remote -v
+          echo
+
+  sys-info:
+    name: Display runner system information (${{ matrix.environment }})
+    runs-on: [self-hosted]
+    strategy:
+      matrix:
+        include:
+          - environment: "host"
+            container_image: ""
+          - environment: "alpine"
+            container_image: "alpine:latest"
+    container: ${{ matrix.container_image || null }}
+    steps:
+      - name: Gather system information
+        run: |
+          echo "== Date / Uptime =="
+          date
+          uptime
+          echo
+
+          echo "== Kernel / OS =="
+          uname -a
+          if command -v lsb_release >/dev/null 2>&1; then lsb_release -a; else cat /etc/os-release || true; fi
+          echo
+
+          echo "== CPU =="
+          if command -v lscpu >/dev/null 2>&1; then lscpu; else cat /proc/cpuinfo | head -n 20; fi
+          echo
+
+          echo "== Memory =="
+          free -h || cat /proc/meminfo | head -n 20 || true
+          echo
+
+          echo "== Disk =="
+          df -h
+          echo
+
+          echo "== User / Identity =="
+          whoami || true
+          id || true
+          echo
+
+          echo "== Environment variables (sorted) =="
+          env | sort
+          echo
+
+          echo "== Docker CLI/info =="
+          if command -v docker >/dev/null 2>&1; then docker --version; docker info --format '{{json .}}' || true; else echo "docker not found"; fi
+          echo
+
+          echo "== Network =="
+          ip addr || ifconfig || true
+          echo
+
+          echo "== Mounts =="
+          mount | head -n 50 || true
+
+  docker-action:
+    name: Run a docker-based action
+    runs-on: [self-hosted]
+    steps:
+      - name: Say hello
+        uses: actions/hello-world-docker-action@9f96333901770c070d13488ada16a51c9b35762a # main, 04.09.2025
+        with:
+          who-to-greet: this is docker based runner ${{ runner.name }}
+
+  build-image:
+    name: Build docker image
+    runs-on: [self-hosted]
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}/test
+    steps:
+      - name: Create docker image
+        run: |
+          # ensure test/docker exists in workspace; workflow will add a simple Dockerfile if not present
+          mkdir -p test/docker          
+          # create a simple Dockerfile
+          cat > test/docker/Dockerfile <<'EOF'
+          FROM alpine:3.18
+          LABEL maintainer="xpirit-training <noreply@xpirit.com>"
+          RUN apk add --no-cache bash curl
+          CMD ["sh", "-c", "echo Hello from docker-runner test; sleep 2"]
+          EOF
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=schedule
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+      - name: Login to registry
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        id: build
+        with:
+          context: test/docker
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

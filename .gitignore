@@ -1,0 +1,16 @@
+# dev
+.copilot
+.dev
+
+# superlinter
+# Super-linter outputs
+super-linter-output
+super-linter.log
+
+# GitHub Actions leftovers
+github_conf
+
+# runner
+.env
+daemon.json
+docker-compose.yml

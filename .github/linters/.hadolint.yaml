@@ -1,0 +1,6 @@
+ignored:
+  - DL3006 # Use USER to switch to non-root when possible
+  - DL3008 # Pin versions in apt-get install
+  - DL3013 # Use WORKDIR to switch to a directory
+
+# You can add additional rules or custom configuration here
