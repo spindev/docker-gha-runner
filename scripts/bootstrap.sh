@@ -5,7 +5,7 @@ set -euo pipefail
 # previous Python script).
 
 image_version="1.0.0"
-image_name="ghcr.io/xpirit-training/docker-runner"
+image_name="ghcr.io/spindev/docker-gha-runner"
 
 usage() {
 	cat <<USAGE >&2
