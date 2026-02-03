@@ -100,3 +100,7 @@ The `bootstrap.sh` script generates a `docker-compose.yml` and `.env` file with 
 # Lint and auto-fix issues
 ./scripts/lint.sh --fix
 ```
+
+## Author
+
+Created by [Till Spindler](https://spindev.net)
